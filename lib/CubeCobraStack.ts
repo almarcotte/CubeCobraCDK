@@ -37,6 +37,7 @@ interface CubeCobraStackParams {
   sessionSecret: string;
   tcgPlayerPublicKey: string;
   tcgPlayerPrivateKey: string;
+  fleetSize: number;
 }
 
 export class CubeCobraStack extends cdk.Stack {
@@ -60,8 +61,8 @@ export class CubeCobraStack extends cdk.Stack {
     });
 
     // console elastic beanstalk
-    const appName = `CubeCobra-${params.environmentName}`;
-    const envName = `${params.environmentName}-env`;
+    const appName = `CubeCobra-${params.environmentName}-app`;
+    const envName = `cubecobra-${params.environmentName}-env`;
     const appSource = `builds/${params.version}.zip`;
 
     const role = new iam.Role(this, "InstanceRole", {
@@ -116,7 +117,7 @@ export class CubeCobraStack extends cdk.Stack {
         {
           namespace: "aws:autoscaling:launchconfiguration",
           optionName: "InstanceType",
-          value: "t3.small",
+          value: "t3.large",
         },
         {
           namespace: "aws:autoscaling:launchconfiguration",
@@ -126,12 +127,12 @@ export class CubeCobraStack extends cdk.Stack {
         {
           namespace: "aws:autoscaling:asg",
           optionName: "MinSize",
-          value: "1",
+          value: `${params.fleetSize}`,
         },
         {
           namespace: "aws:autoscaling:asg",
           optionName: "MaxSize",
-          value: "3",
+          value: `${params.fleetSize + 1}`,
         },
         {
           namespace: "aws:elasticbeanstalk:environment",
@@ -194,7 +195,7 @@ export class CubeCobraStack extends cdk.Stack {
       {
         environmentName: envName,
         applicationName: appName,
-        solutionStackName: "64bit Amazon Linux 2023 v6.0.4 running Node.js 18",
+        solutionStackName: "64bit Amazon Linux 2023 v6.4.0 running Node.js 20",
         optionSettings: optionSettingProperties,
         versionLabel: applicationVersion.ref,
       }
@@ -211,7 +212,7 @@ export class CubeCobraStack extends cdk.Stack {
       type: "A",
       aliasTarget: {
         dnsName: environment.attrEndpointUrl,
-        hostedZoneId: "Z35SXDOTRQ7X7K", // This is the hosted zone ID for ALB in us-east-1
+        hostedZoneId: "Z3AADJGX6KTTL2", // This is the hosted zone ID for ALB in us-east-2
       },
     });
   }

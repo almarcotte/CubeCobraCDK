@@ -17,8 +17,8 @@ new CubeCobraStack(
     emailUser: process.env.EMAIL_USER || "",
     emailPass: process.env.EMAIL_PASS || "",
     domain: "cubecobradev.com",
-    environmentName: "dev",
-    version: "1.0.0",
+    environmentName: "development",
+    version: "1.0.2",
     awsLogGroup: "CUBECOBRA",
     awsLogStream: "DEVELOPMENT",
     dataBucket: "cubecobra-data-production",
@@ -36,6 +36,7 @@ new CubeCobraStack(
     sessionSecret: process.env.SESSION_SECRET || "",
     tcgPlayerPublicKey: process.env.TCG_PLAYER_PUBLIC_KEY || "",
     tcgPlayerPrivateKey: process.env.TCG_PLAYER_PRIVATE_KEY || "",
+    fleetSize: 1,
   },
   {
     env: envUSA,
