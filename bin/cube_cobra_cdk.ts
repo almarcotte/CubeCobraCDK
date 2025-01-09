@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import "source-map-support/register";
 import * as cdk from "aws-cdk-lib";
-import { CubeCobraStack } from "../lib/CubeCobraStack";
+import { CubeCobraStack } from "../stacks/cubecobra";
 
 const envUSA = { account: "816705121310", region: "us-east-2" };
 
@@ -22,6 +22,7 @@ new CubeCobraStack(
     awsLogGroup: "CUBECOBRA",
     awsLogStream: "DEVELOPMENT",
     dataBucket: "cubecobra-data-production",
+    appBucket: "cubecobra",
     downTimeActive: false,
     dynamoPrefix: "PROD",
     env: "production",
