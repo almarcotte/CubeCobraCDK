@@ -7,19 +7,15 @@ import {SubnetType} from "aws-cdk-lib/aws-ec2";
 import {CfnOutput, RemovalPolicy} from "aws-cdk-lib";
 
 export interface ScheduledJobProps {
+    command: string[];
     memoryLimitMib: number;
     cpu: number;
     schedule: events.Schedule;
 }
 
 export class ScheduledJob extends Construct {
-    constructor(scope: Construct, id: string, cluster: ecs.Cluster, props: ScheduledJobProps) {
+    constructor(scope: Construct, id: string, cluster: ecs.ICluster, repository: ecr.IRepository, props: ScheduledJobProps) {
         super(scope, id);
-
-        const repository = new ecr.Repository(this, `${id}Repository`, {
-            repositoryName: `cubecobra-${id.toLowerCase()}`,
-            removalPolicy: RemovalPolicy.RETAIN,
-        })
 
         const taskDefinition = new ecs.FargateTaskDefinition(this, `${id}TaskDef`, {
             memoryLimitMiB: props.memoryLimitMib,
@@ -27,7 +23,7 @@ export class ScheduledJob extends Construct {
         });
 
         taskDefinition.addContainer(`${id}Container`, {
-            image: ecs.ContainerImage.fromEcrRepository(repository),
+            image: ecs.ContainerImage.fromEcrRepository(repository, "latest"),
             logging: new ecs.AwsLogDriver({
                 streamPrefix: id,
             }),
