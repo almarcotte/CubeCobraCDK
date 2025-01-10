@@ -7,8 +7,8 @@ import {CfnInstanceProfile, Role, ServicePrincipal} from "aws-cdk-lib/aws-iam";
 import {Bucket} from "aws-cdk-lib/aws-s3";
 import {SharedFargateCluster} from "../resources/fargate";
 import {ScheduledJob, ScheduledJobProps} from "../resources/scheduled-job";
-import * as ecr from "aws-cdk-lib/aws-ecr";
 import * as ecs from "aws-cdk-lib/aws-ecs";
+import {ECR} from "../resources/ecr";
 
 interface CubeCobraStackParams {
     accessKey: string;
@@ -79,12 +79,12 @@ export class CubeCobraStack extends cdk.Stack {
         })
 
         const fargateCluster = new ecs.Cluster(this, 'SharedFargateCluster');
-        const repository = new ecr.Repository(this, "ECRRepository", {
-            removalPolicy: RemovalPolicy.RETAIN
-        });
+
+
+        const ecr = new ECR(this, "ECR", {githubRepository: "dekkerglen/CubeCobra"})
 
         params.jobs?.forEach((jobProps, jobName) => {
-            new ScheduledJob(this, jobName, fargateCluster, repository, jobProps)
+            new ScheduledJob(this, jobName, fargateCluster, ecr.repository, jobProps)
         })
     }
 }
