@@ -5,6 +5,8 @@ import {StackProps} from "aws-cdk-lib";
 import {Certificates} from "./certificates";
 import {CfnInstanceProfile, Role, ServicePrincipal} from "aws-cdk-lib/aws-iam";
 import {Bucket} from "aws-cdk-lib/aws-s3";
+import {SharedFargateCluster} from "../resources/fargate";
+import {ScheduledJob, ScheduledJobProps} from "../resources/scheduled-job";
 
 interface CubeCobraStackParams {
     accessKey: string;
@@ -33,6 +35,7 @@ interface CubeCobraStackParams {
     tcgPlayerPublicKey: string;
     tcgPlayerPrivateKey: string;
     fleetSize: number;
+    jobs?: Map<string, ScheduledJobProps>;
 }
 
 export type Environment = "production" | "development";
@@ -71,6 +74,12 @@ export class CubeCobraStack extends cdk.Stack {
         new Route53(this, "Route53", {
             dnsName: elasticBeanstalk.environment.attrEndpointUrl,
             domain: params.domain
+        })
+
+        const fargate = new SharedFargateCluster(this, "SharedFargateCluster")
+
+        params.jobs?.forEach((jobProps, jobName) => {
+            new ScheduledJob(this, jobName, fargate.cluster, jobProps)
         })
     }
 }
