@@ -4,7 +4,7 @@ import {AttributeType, BillingMode, ProjectionType, Table} from 'aws-cdk-lib/aws
 import {RemovalPolicy, Tags} from "aws-cdk-lib";
 import {toResourceName} from "./utils";
 
-const tables: Map<string, {
+const tablesToCreate: Map<string, {
     partitionKey: string;
     indexes: { name: string; partitionKey: string; sortKey: string; }[];
 }> = new Map([
@@ -43,15 +43,25 @@ interface DynamodbTablesProps {
 }
 
 export class DynamodbTables extends Construct {
+    public readonly tables: Record<string, dynamodb.Table> = {};
+
     constructor(scope: Construct, id: string, props: DynamodbTablesProps) {
         super(scope, id);
 
+        // If we don't create the table we'll attempt to load them so we can operate on them as needed
         if (!this.node.tryGetContext("createDynamoDBTables")) {
-            console.log("using existing DynamoDB tables, no new tables will be created.")
+            tablesToCreate.forEach((_, tableName) => {
+                this.tables[tableName] = dynamodb.Table.fromTableName(
+                    this,
+                    toResourceName(tableName),
+                    `${props.prefix}_${tableName.toUpperCase()}`
+                ) as Table;
+            })
+
             return;
         }
 
-        tables.forEach((tableProps, tableName) => {
+        tablesToCreate.forEach((tableProps, tableName) => {
             const table = new dynamodb.Table(this, toResourceName(tableName), {
                 partitionKey: {name: tableProps.partitionKey, type: AttributeType.STRING},
                 billingMode: BillingMode.PAY_PER_REQUEST,
@@ -69,6 +79,8 @@ export class DynamodbTables extends Construct {
             })
 
             Tags.of(table).add('environment', props.prefix)
+
+            this.tables[tableName] = table;
         })
     }
 }
