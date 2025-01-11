@@ -8,6 +8,7 @@ import {Bucket} from "aws-cdk-lib/aws-s3";
 import {ScheduledJob, ScheduledJobProps} from "./scheduled-job";
 import * as ecs from "aws-cdk-lib/aws-ecs";
 import {ECR} from "./ecr";
+import * as iam from "aws-cdk-lib/aws-iam";
 
 interface CubeCobraStackParams {
     accessKey: string;
@@ -79,8 +80,12 @@ export class CubeCobraStack extends cdk.Stack {
 
         const fargateCluster = new ecs.Cluster(this, 'SharedFargateCluster');
 
+        const oidcProvider = new iam.OpenIdConnectProvider(this, "GitHubOidcProvider", {
+            url: "https://token.actions.githubusercontent.com",
+            clientIds: ["sts.amazonaws.com"],
+        });
 
-        const ecr = new ECR(this, "ECR", {githubRepository: "dekkerglen/CubeCobra"})
+        const ecr = new ECR(this, "ECR", oidcProvider, {githubRepository: "dekkerglen/CubeCobra"})
 
         params.jobs?.forEach((jobProps, jobName) => {
             new ScheduledJob(this, jobName, fargateCluster, ecr.repository, jobProps)
