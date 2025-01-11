@@ -5,10 +5,9 @@ import {StackProps} from "aws-cdk-lib";
 import {Certificates} from "./certificates";
 import {CfnInstanceProfile, Role, ServicePrincipal} from "aws-cdk-lib/aws-iam";
 import {Bucket} from "aws-cdk-lib/aws-s3";
-import {SharedFargateCluster} from "../resources/fargate";
-import {ScheduledJob, ScheduledJobProps} from "../resources/scheduled-job";
+import {ScheduledJob, ScheduledJobProps} from "./scheduled-job";
 import * as ecs from "aws-cdk-lib/aws-ecs";
-import {ECR} from "../resources/ecr";
+import {ECR} from "./ecr";
 
 interface CubeCobraStackParams {
     accessKey: string;
