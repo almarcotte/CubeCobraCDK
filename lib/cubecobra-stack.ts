@@ -9,6 +9,7 @@ import {ScheduledJob, ScheduledJobProps} from "./scheduled-job";
 import * as ecs from "aws-cdk-lib/aws-ecs";
 import {ECR} from "./ecr";
 import * as iam from "aws-cdk-lib/aws-iam";
+import {Pipeline} from "./pipeline";
 
 interface CubeCobraStackParams {
     accessKey: string;
@@ -53,16 +54,12 @@ export class CubeCobraStack extends cdk.Stack {
 
         const cert = new Certificates(this, "Certificates", {domain: params.domain});
 
-        const role = new Role(this, "InstanceRole", {
-            assumedBy: new ServicePrincipal("ec2.amazonaws.com"),
-        });
-
-        const instanceProfile = new CfnInstanceProfile(this, "InstanceProfile", {
-            roles: [role.roleName],
-        });
+        const role = new Role(this, "InstanceRole", {assumedBy: new ServicePrincipal("ec2.amazonaws.com")});
+        const instanceProfile = new CfnInstanceProfile(this, "InstanceProfile", {roles: [role.roleName]});
 
         const appBucket = Bucket.fromBucketName(this, "AppBucket", params.appBucket);
 
+        // Create everything we need related to ElasticBeanstalk, including the environment and the application
         const elasticBeanstalk = new ElasticBeanstalk(this, "ElasticBeanstalk", {
             certificate: cert.consoleCertificate,
             environmentName: params.environmentName,
@@ -78,15 +75,18 @@ export class CubeCobraStack extends cdk.Stack {
             domain: params.domain
         })
 
+        // Create the ECS cluster where we'll schedule jobs
         const fargateCluster = new ecs.Cluster(this, 'SharedFargateCluster');
 
-        const oidcProvider = new iam.OpenIdConnectProvider(this, "GitHubOidcProvider", {
-            url: "https://token.actions.githubusercontent.com",
-            clientIds: ["sts.amazonaws.com"],
-        });
+        // Build everything we need to run our deployment pipelines on GitHub
+        const pipeline = new Pipeline(this, "Pipeline", {
+            githubRepositories: ["dekkerglen/CubeCobra"]
+        })
 
-        const ecr = new ECR(this, "Ecr", oidcProvider, {githubRepository: "dekkerglen/CubeCobra"})
+        // Create a ECR repository and grant the proper access to our pipeline role
+        const ecr = new ECR(this, "Ecr", pipeline.githubRole)
 
+        // Register all the scheduled jobs we have
         params.jobs?.forEach((jobProps, jobName) => {
             new ScheduledJob(this, jobName, fargateCluster, ecr.repository, jobProps)
         })

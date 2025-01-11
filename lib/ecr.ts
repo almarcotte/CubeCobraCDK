@@ -1,17 +1,13 @@
-import { RemovalPolicy, CfnOutput } from "aws-cdk-lib";
+import {RemovalPolicy, CfnOutput, Stack} from "aws-cdk-lib";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as ecr from "aws-cdk-lib/aws-ecr";
 import { Construct } from "constructs";
-import {IOpenIdConnectProvider} from "aws-cdk-lib/aws-iam/lib/oidc-provider";
-
-interface ECRProps {
-    githubRepository: string; // Format: <owner>/<repo>
-}
+import {Role} from "aws-cdk-lib/aws-iam";
 
 export class ECR extends Construct {
     public readonly repository: ecr.IRepository;
 
-    constructor(scope: Construct, id: string, oidcProvider: IOpenIdConnectProvider, props: ECRProps) {
+    constructor(scope: Construct, id: string, pipelineRole: Role) {
         super(scope, id);
 
         this.repository = new ecr.Repository(this, "EcrRepository", {
@@ -24,21 +20,7 @@ export class ECR extends Construct {
             description: "The URI of the ECR repository",
         });
 
-        // Create a role that GitHub actions can use to push images to the repository without needing credentials
-        const githubRole = new iam.Role(this, "GitHubRole", {
-            assumedBy: new iam.FederatedPrincipal(
-                oidcProvider.openIdConnectProviderArn,
-                {
-                    StringLike: {
-                        "token.actions.githubusercontent.com:sub": `repo:${props.githubRepository}:*`,
-                    },
-                },
-                "sts:AssumeRoleWithWebIdentity"
-            ),
-            description: "Role assumed by GitHub Actions to interact with ECR",
-        });
-
-        githubRole.addToPolicy(
+        pipelineRole.addToPolicy(
             new iam.PolicyStatement({
                 effect: iam.Effect.ALLOW,
                 actions: ["ecr:GetAuthorizationToken"],
@@ -46,7 +28,7 @@ export class ECR extends Construct {
             })
         );
 
-        githubRole.addToPolicy(
+        pipelineRole.addToPolicy(
             new iam.PolicyStatement({
                 effect: iam.Effect.ALLOW,
                 actions: [
@@ -60,10 +42,11 @@ export class ECR extends Construct {
             })
         );
 
-        // Output this role because we'll need the ARN in our GitHub action
-        new CfnOutput(this, "GitHubActionsRoleArn", {
-            value: githubRole.roleArn,
-            description: "The ARN of the IAM role for GitHub Actions",
-        });
+        pipelineRole.addToPolicy(
+            new iam.PolicyStatement({
+                actions: ['cloudformation:DescribeStacks'],
+                resources: [Stack.of(this).stackId],
+            })
+        );
     }
 }
