@@ -5,6 +5,7 @@ import {StackProps} from "aws-cdk-lib";
 import {Certificates} from "./certificates";
 import {CfnInstanceProfile, Role, ServicePrincipal} from "aws-cdk-lib/aws-iam";
 import {Bucket} from "aws-cdk-lib/aws-s3";
+import {DynamodbTables} from "./dynamodb-tables";
 
 interface CubeCobraStackParams {
     accessKey: string;
@@ -72,6 +73,9 @@ export class CubeCobraStack extends cdk.Stack {
             dnsName: elasticBeanstalk.environment.attrEndpointUrl,
             domain: params.domain
         })
+
+        // TODO: Not sure if we want this. Creating the tables with the app is beneficial (especially for local dev)
+        new DynamodbTables(this, "DynamoDBTables", {prefix: ""})
     }
 }
 
