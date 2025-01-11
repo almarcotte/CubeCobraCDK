@@ -1,10 +1,10 @@
 import * as cdk from "aws-cdk-lib";
-import {IAM} from "../resources/iam";
-import {ElasticBeanstalk} from "../resources/elastic-beanstalk";
-import {Route53} from "../resources/route53";
-import {S3Buckets} from "../resources/s3";
+import {ElasticBeanstalk} from "./elastic-beanstalk";
+import {Route53} from "./route53";
 import {StackProps} from "aws-cdk-lib";
-import {Certificates} from "../resources/certificates";
+import {Certificates} from "./certificates";
+import {CfnInstanceProfile, Role, ServicePrincipal} from "aws-cdk-lib/aws-iam";
+import {Bucket} from "aws-cdk-lib/aws-s3";
 
 interface CubeCobraStackParams {
     accessKey: string;
@@ -47,20 +47,24 @@ export class CubeCobraStack extends cdk.Stack {
         super(scope, id, props);
 
         const cert = new Certificates(this, "Certificates", {domain: params.domain});
-        const iam = new IAM(this, "IAM")
 
-        const buckets = new S3Buckets(this, "S3Buckets", {
-            appBucketName: params.appBucket,
-            dataBucketName: params.dataBucket,
-        })
+        const role = new Role(this, "InstanceRole", {
+            assumedBy: new ServicePrincipal("ec2.amazonaws.com"),
+        });
+
+        const instanceProfile = new CfnInstanceProfile(this, "InstanceProfile", {
+            roles: [role.roleName],
+        });
+
+        const appBucket = Bucket.fromBucketName(this, "AppBucket", params.appBucket);
 
         const elasticBeanstalk = new ElasticBeanstalk(this, "ElasticBeanstalk", {
             certificate: cert.consoleCertificate,
             environmentName: params.environmentName,
             environmentVariables: createEnvironmentVariables(params, props),
             fleetSize: params.fleetSize,
-            instanceProfile: iam.instanceProfile,
-            appBucket: buckets.appBucket,
+            instanceProfile: instanceProfile,
+            appBucket: appBucket,
             appVersion: params.version
         })
 

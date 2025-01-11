@@ -27,5 +27,4 @@ export class Route53 extends Construct {
         });
 
     }
-
 }

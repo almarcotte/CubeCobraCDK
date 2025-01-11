@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import "source-map-support/register";
 import * as cdk from "aws-cdk-lib";
-import { CubeCobraStack } from "../stacks/cubecobra";
+import { CubeCobraStack } from "../lib/cubecobra-stack";
 
 const envUSA = { account: "816705121310", region: "us-east-2" };
 
