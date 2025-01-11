@@ -19,7 +19,7 @@ export class ECR extends Construct {
         });
 
         // Output the repository name since we'll need it in the GitHub action
-        new CfnOutput(this, "EcrRepositoryUri", {
+        new CfnOutput(this, "RepositoryName", {
             value: this.repository.repositoryName,
             description: "The URI of the ECR repository",
         });

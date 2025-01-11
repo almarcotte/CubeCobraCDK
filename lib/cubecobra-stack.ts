@@ -85,7 +85,7 @@ export class CubeCobraStack extends cdk.Stack {
             clientIds: ["sts.amazonaws.com"],
         });
 
-        const ecr = new ECR(this, "ECR", oidcProvider, {githubRepository: "dekkerglen/CubeCobra"})
+        const ecr = new ECR(this, "Ecr", oidcProvider, {githubRepository: "dekkerglen/CubeCobra"})
 
         params.jobs?.forEach((jobProps, jobName) => {
             new ScheduledJob(this, jobName, fargateCluster, ecr.repository, jobProps)
