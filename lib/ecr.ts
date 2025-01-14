@@ -10,28 +10,26 @@ export class ECR extends Construct {
     constructor(scope: Construct, id: string, pipelineRole: Role) {
         super(scope, id);
 
-        this.repository = new ecr.Repository(this, "EcrRepository", {
+        this.repository = new ecr.Repository(this, `${id}EcrRepository`, {
             removalPolicy: RemovalPolicy.RETAIN,
         });
 
         // Output the repository name since we'll need it in the GitHub action
-        new CfnOutput(this, "RepositoryName", {
+        new CfnOutput(this, `${id}RepositoryName`, {
             value: this.repository.repositoryName,
-            description: "The URI of the ECR repository",
+            description: "The name of the ECR repository",
         });
 
-        pipelineRole.addToPolicy(
-            new iam.PolicyStatement({
-                effect: iam.Effect.ALLOW,
-                actions: ["ecr:GetAuthorizationToken"],
-                resources: ["*"], // Required for all ECR repositories
-            })
-        );
+        new CfnOutput(this, `${id}RepositoryUri`, {
+            value: this.repository.repositoryUri,
+            description: "The URI for the ECR repository",
+        });
 
         pipelineRole.addToPolicy(
             new iam.PolicyStatement({
                 effect: iam.Effect.ALLOW,
                 actions: [
+                    "ecr:GetAuthorizationToken",
                     "ecr:BatchCheckLayerAvailability",
                     "ecr:InitiateLayerUpload",
                     "ecr:UploadLayerPart",

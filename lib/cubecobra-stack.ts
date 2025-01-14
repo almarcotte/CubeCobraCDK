@@ -8,7 +8,6 @@ import {Bucket} from "aws-cdk-lib/aws-s3";
 import {ScheduledJob, ScheduledJobProps} from "./scheduled-job";
 import * as ecs from "aws-cdk-lib/aws-ecs";
 import {ECR} from "./ecr";
-import * as iam from "aws-cdk-lib/aws-iam";
 import {Pipeline} from "./pipeline";
 
 interface CubeCobraStackParams {

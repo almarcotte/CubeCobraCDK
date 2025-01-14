@@ -15,12 +15,12 @@ export class Pipeline extends Construct {
     constructor(scope: Construct, id: string, props: PipelineProps) {
         super(scope, id);
 
-        this.oidcProvider = new iam.OpenIdConnectProvider(this, "GitHubOidcProvider", {
+        this.oidcProvider = new iam.OpenIdConnectProvider(this, `${id}GitHubOidcProvider`, {
             url: "https://token.actions.githubusercontent.com",
             clientIds: ["sts.amazonaws.com"],
         });
 
-        this.githubRole = new iam.Role(this, "GitHubRole", {
+        this.githubRole = new iam.Role(this, `${id}GitHubRole`, {
             assumedBy: new iam.FederatedPrincipal(
                 this.oidcProvider.openIdConnectProviderArn,
                 {
@@ -34,7 +34,7 @@ export class Pipeline extends Construct {
         });
 
         // Output this role because we'll need the ARN in our GitHub action
-        new CfnOutput(this, "GitHubActionsRoleArn", {
+        new CfnOutput(this, `${id}GitHubActionsRoleArn`, {
             value: this.githubRole.roleArn,
             description: "The ARN of the IAM role for GitHub Actions",
         });
