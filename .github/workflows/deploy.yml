@@ -1,0 +1,74 @@
+name: CDK Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: 'Git revision to deploy (commit SHA, branch, or tag). Defaults to main.'
+        required: false
+        default: 'main'
+        type: string
+
+jobs:
+  plan:
+    if: github.repository == 'dekkerglen/CubeCobraCDK'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.revision }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.GITHUB_TOKEN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: CDK Diff
+        run: |
+          npx cdk diff
+
+  deploy:
+    needs: plan
+    runs-on: ubuntu-latest
+    environment: production
+    if: github.repository == 'dekkerglen/CubeCobraCDK'
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.revision }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.GITHUB_TOKEN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: CDK Deploy
+        run: npx cdk deploy --all --require-approval never
