@@ -3,11 +3,6 @@ name: CDK Deployment
 on:
   workflow_dispatch:
     inputs:
-      revision:
-        description: Git revision to deploy (commit SHA, branch, or tag). Defaults to main.
-        required: false
-        default: main
-        type: string
       version:
         description: The version of the CubeCobra application to deploy (v.*)
         required: true
@@ -30,8 +25,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.revision }}
 
       - uses: actions/setup-node@v4
         with:
