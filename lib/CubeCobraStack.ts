@@ -38,6 +38,11 @@ interface CubeCobraStackParams {
   tcgPlayerPublicKey: string;
   tcgPlayerPrivateKey: string;
   fleetSize: number;
+  captchaSiteKey: string;
+  captchaSecretKey: string;
+  draftmancerApiKey: string;
+  stripeSecretKey: string;
+  stripePublicKey: string;
 }
 
 export class CubeCobraStack extends cdk.Stack {
@@ -68,6 +73,10 @@ export class CubeCobraStack extends cdk.Stack {
     const role = new iam.Role(this, "InstanceRole", {
       assumedBy: new iam.ServicePrincipal("ec2.amazonaws.com"),
     });
+
+    role.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName("AWSElasticBeanstalkWebTier")
+    );
 
     const profile = new iam.CfnInstanceProfile(this, "InstanceProfile", {
       roles: [role.roleName],
@@ -101,7 +110,7 @@ export class CubeCobraStack extends cdk.Stack {
       PATREON_CLIENT_ID: params.patreonClientId,
       PATREON_CLIENT_SECRET: params.patreonClientSecret,
       PATREON_HOOK_SECRET: params.patreonHookSecret,
-      PATREON_REDIRECT_URI: params.patreonRedirectUri,
+      PATREON_REDIRECT: params.patreonRedirectUri,
       PORT: "8080",
       REDIS_HOST: params.redisHost,
       REDIS_SETUP: "false",
@@ -110,6 +119,11 @@ export class CubeCobraStack extends cdk.Stack {
       TCG_PLAYER_PRIVATE_KEY: params.tcgPlayerPublicKey,
       TCG_PLAYER_PUBLIC_KEY: params.tcgPlayerPrivateKey,
       USE_S3: "true",
+      CAPTCHA_SITE_KEY: params.captchaSiteKey,
+      CAPTCHA_SECRET_KEY: params.captchaSecretKey,
+      DRAFTMANCER_API_KEY: params.draftmancerApiKey,
+      STRIPE_SECRET_KEY: params.stripeSecretKey,
+      STRIPE_PUBLIC_KEY: params.stripePublicKey,
     };
 
     const optionSettingProperties: elasticbeanstalk.CfnEnvironment.OptionSettingProperty[] =
@@ -166,8 +180,18 @@ export class CubeCobraStack extends cdk.Stack {
         },
         {
           namespace: "aws:elasticbeanstalk:command",
-          optionName: "DeploymentPolicy",
-          value: "Immutable",
+          optionName: "BatchSize",
+          value: "50",
+        },
+        {
+          namespace: "aws:elasticbeanstalk:environment:process:default",
+          optionName: "StickinessEnabled",
+          value: "true",
+        },
+        {
+          namespace: "aws:elasticbeanstalk:environment:process:default",
+          optionName: "StickinessLBCookieDuration",
+          value: "86400", // 1 day
         },
         ...Object.keys(environmentVariables).map((key) => ({
           namespace: "aws:elasticbeanstalk:application:environment",
